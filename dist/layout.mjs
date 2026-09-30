@@ -18,6 +18,8 @@ export const structures = {
 export const staticObstacles = Object.values(structures);
 // Um lugar para cada pessoa dentro do container, junto à parede dos fundos.
 export const containerSlots = [10.8,11.7,12.6,13.5,14.4,15.3].map(x => ({x,z:.15}));
+// Ponto de reunião da equipe, à espera da ordem do encarregado, e posição inicial do jogador.
+export const gatherSlots = [-3.4,-2.3,-1.2,-.1,1,2.1].map(x => ({x,z:8.8}));
 export const doorOutside = {x:13,z:3.2};
 export const doorInside = {x:13,z:1.6};
 export const playerStart = {x:1,z:6.4};

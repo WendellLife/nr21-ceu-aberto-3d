@@ -6,6 +6,7 @@ import {RenderPass} from './addons/postprocessing/RenderPass.js';
 import {UnrealBloomPass} from './addons/postprocessing/UnrealBloomPass.js';
 import {GTAOPass} from './addons/postprocessing/GTAOPass.js';
 import {OutputPass} from './addons/postprocessing/OutputPass.js';
+import {ShaderPass} from './addons/postprocessing/ShaderPass.js';
 import {RoomEnvironment} from './addons/environments/RoomEnvironment.js';
 
 // ---------- Quality presets ----------
@@ -29,13 +30,17 @@ export function detectHardware(renderer){
  const level=score>=3?'alta':score===2?'media':'baixa';
  return {gpu,mobile,cores,mem,score,level};
 }
-export function savedQuality(){try{const saved=localStorage.getItem('brigada-qualidade');if(saved==='auto'||QUALITY[saved])return saved;}catch{}return 'auto';}
+export function savedQuality(){try{const saved=localStorage.getItem('nr21-qualidade');if(saved==='auto'||QUALITY[saved])return saved;}catch{}return 'auto';}
 export function defaultQuality(){return 'media';}
 export function createRenderPipeline(renderer,scene,camera,sun){
  const pmrem=new T.PMREMGenerator(renderer);scene.environment=pmrem.fromScene(new RoomEnvironment(),.04).texture;scene.environmentIntensity=.3;
- let composer=null,bloom=null,ao=null,level=null;
+ let composer=null,bloom=null,ao=null,level=null,heatPass=null,heat=0;
+ // Ondulação do ar quente: deslocamento senoidal das linhas da imagem, mais forte perto do chão (parte de baixo da tela).
+ const HeatShader={uniforms:{tDiffuse:{value:null},time:{value:0},amount:{value:0}},
+  vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+  fragmentShader:'uniform sampler2D tDiffuse;uniform float time;uniform float amount;varying vec2 vUv;void main(){float band=smoothstep(.95,.15,vUv.y);float w=sin(vUv.y*95.+time*2.6)*.6+sin(vUv.y*41.-time*1.7+vUv.x*9.)*.4;vec2 uv=vUv+vec2(w*.0022*amount*band,0.);gl_FragColor=texture2D(tDiffuse,uv);}'};
  function build(){
-  composer?.dispose?.();composer=null;bloom=null;ao=null;
+  composer?.dispose?.();composer=null;bloom=null;ao=null;heatPass=null;
   const q={...QUALITY[level],level};
   renderer.setPixelRatio(Math.min(devicePixelRatio,q.pixelRatio));renderer.setSize(innerWidth,innerHeight);
   renderer.shadowMap.enabled=q.shadows;sun.castShadow=q.shadows;renderer.shadowMap.type=T.PCFSoftShadowMap;sun.shadow.radius=q.soft?5:3;
@@ -46,13 +51,17 @@ export function createRenderPipeline(renderer,scene,camera,sun){
   composer.addPass(new RenderPass(scene,camera));
   if(q.ao){ao=new GTAOPass(scene,camera,innerWidth,innerHeight);ao.output=GTAOPass.OUTPUT.Default;ao.blendIntensity=.85;ao.updateGtaoMaterial({radius:.45,distanceExponent:1.4,thickness:1.2,scale:1,samples:12});ao.updatePdMaterial({lumaPhi:10,depthPhi:2,normalPhi:3,radius:6,rings:2,samples:12});composer.addPass(ao);}
   if(q.bloom){bloom=new UnrealBloomPass(new T.Vector2(innerWidth,innerHeight),.16,.25,1.6);composer.addPass(bloom);}
+  heatPass=new ShaderPass(HeatShader);heatPass.uniforms.amount.value=heat;composer.addPass(heatPass);
   composer.addPass(new OutputPass());
  }
  const api={
   get level(){return level;},
-  setLevel(l,persist=true){if(!QUALITY[l]||l===level)return;level=l;if(persist){try{localStorage.setItem('brigada-qualidade',l);}catch{}}build();},
+  setLevel(l,persist=true){if(!QUALITY[l]||l===level)return;level=l;if(persist){try{localStorage.setItem('nr21-qualidade',l);}catch{}}build();},
   resize(){if(composer){composer.setSize(innerWidth,innerHeight);}renderer.setSize(innerWidth,innerHeight);},
-  render(){if(composer)composer.render();else renderer.render(scene,camera);}
+  // 0 a 1. Só existe nos níveis Média e Alta (pós-processamento); no nível Baixa o jogo usa o brilho do sol em CSS.
+  setHeat(v){heat=v;if(heatPass)heatPass.uniforms.amount.value=v;},
+  get hasHeatPass(){return !!heatPass;},
+  render(time=0){if(heatPass)heatPass.uniforms.time.value=time;if(composer)composer.render();else renderer.render(scene,camera);}
  };
  return api;
 }
@@ -79,34 +88,60 @@ export function makeTextures(){
  // Grass and asphalt for the surroundings.
  {const [c,g]=canvas(256);g.fillStyle='#5f7f4c';g.fillRect(0,0,256,256);const R=rand(23);for(let i=0;i<5000;i++){const v=R();g.fillStyle=v<.5?`rgba(40,70,30,${.3*R()})`:`rgba(150,190,110,${.25*R()})`;g.fillRect(R()*256,R()*256,1,2+R()*3);}out.grass=tex(c,40,40);}
  {const [c,g]=canvas(256);g.fillStyle='#3f4549';g.fillRect(0,0,256,256);speckle(g,256,256,7000,.22,2,31);out.asphalt=tex(c,2,14);out.asphaltN=normalFrom(c,1.2);out.asphaltN.repeat.copy(out.asphalt.repeat);}
+ // Terra batida do canteiro, com pedrisco e marcas de pneu; e asfalto novo (base recém-compactada).
+ {const [c,g]=canvas(256);g.fillStyle='#a8957a';g.fillRect(0,0,256,256);const R=rand(41);for(let i=0;i<60;i++){const x=R()*256,y=R()*256,r=16+R()*40;const gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,R()<.5?'rgba(120,90,55,.22)':'rgba(214,186,140,.2)');gr.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=gr;g.fillRect(x-r,y-r,r*2,r*2);}speckle(g,256,256,4500,.3,2,43);out.dirt=tex(c,22,14);out.dirtN=normalFrom(c,1.8);out.dirtN.repeat.copy(out.dirt.repeat);}
+ {const [c,g]=canvas(256);g.fillStyle='#23272a';g.fillRect(0,0,256,256);speckle(g,256,256,9000,.3,2,57);out.freshAsphalt=tex(c,4,3);out.freshAsphaltN=normalFrom(c,1.6);out.freshAsphaltN.repeat.copy(out.freshAsphalt.repeat);}
  return out;
 }
-// Round, soft-edged sprite textures for particles.
+// ---------- Partículas e clima ----------
 function radial(stops,size=128){const [c,g]=canvas(size);const gr=g.createRadialGradient(size/2,size/2,0,size/2,size/2,size/2);stops.forEach(([o,col])=>gr.addColorStop(o,col));g.fillStyle=gr;g.fillRect(0,0,size,size);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;return t;}
-function cloud(size=128,seed=1){const [c,g]=canvas(size);const R=rand(seed);for(let i=0;i<22;i++){const x=size*(.25+R()*.5),y=size*(.25+R()*.5),r=size*(.12+R()*.2);const gr=g.createRadialGradient(x,y,0,x,y,r);gr.addColorStop(0,'rgba(255,255,255,.35)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,size,size);}const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;return t;}
 export const particleTextures={
- flame:radial([[0,'rgba(255,255,235,1)'],[.25,'rgba(255,214,120,.95)'],[.55,'rgba(255,120,40,.55)'],[1,'rgba(255,60,10,0)']]),
- spark:radial([[0,'rgba(255,255,220,1)'],[.3,'rgba(255,190,90,.9)'],[1,'rgba(255,120,40,0)']],32),
- smoke:cloud(128,4),smoke2:cloud(128,9),
- water:radial([[0,'rgba(235,248,255,.95)'],[.5,'rgba(170,215,245,.5)'],[1,'rgba(150,200,240,0)']],64),
- glow:radial([[0,'rgba(255,255,255,1)'],[.4,'rgba(255,255,255,.35)'],[1,'rgba(255,255,255,0)']],64)
+ glow:radial([[0,'rgba(255,255,255,1)'],[.4,'rgba(255,255,255,.35)'],[1,'rgba(255,255,255,0)']],64),
+ drop:radial([[0,'rgba(230,245,255,.95)'],[.55,'rgba(190,225,250,.55)'],[1,'rgba(170,210,245,0)']],32),
+ puff:radial([[0,'rgba(255,255,255,.55)'],[.6,'rgba(255,255,255,.18)'],[1,'rgba(255,255,255,0)']],64)
 };
-// Fire emitter: glowing flame sprites + sparks, keeps the {parts,light} shape the game expects.
-export function createFire(scene,x,y,z,count,size){
- const parts=[],sparks=[];
- for(let i=0;i<count;i++){const m=new T.Sprite(new T.SpriteMaterial({map:particleTextures.flame,color:new T.Color(1.6,1.25,.9),transparent:true,depthWrite:false,blending:T.AdditiveBlending}));m.userData={phase:Math.random(),x:(Math.random()-.5)*.6,z:(Math.random()-.5)*.6,size:size*(2.6+Math.random()*1.6),spin:(Math.random()-.5)*2};scene.add(m);parts.push(m);}
- for(let i=0;i<Math.ceil(count*.6);i++){const m=new T.Sprite(new T.SpriteMaterial({map:particleTextures.spark,color:new T.Color(2,1.3,.6),transparent:true,depthWrite:false,blending:T.AdditiveBlending}));m.userData={phase:Math.random(),x:(Math.random()-.5)*.5,z:(Math.random()-.5)*.5,drift:(Math.random()-.5)*.6};scene.add(m);sparks.push(m);}
- const core=new T.Sprite(new T.SpriteMaterial({map:particleTextures.glow,color:new T.Color(1.4,.7,.25),transparent:true,depthWrite:false,blending:T.AdditiveBlending}));scene.add(core);
- const light=new T.PointLight('#ff8a2b',0,8,1.6);light.position.set(x,y+.8,z);scene.add(light);
- return {x,y,z,parts,sparks,core,light};
-}
-export function animateFireFx(f,on,scale,time){
- f.parts.forEach((m,i)=>{m.visible=on;if(!on)return;const u=m.userData,p=(time*1.25+u.phase)%1;const w=Math.sin(time*7+i)*.06*scale;m.position.set(f.x+u.x*scale*(1-p*.6)+w,f.y+p*1.15*scale,f.z+u.z*scale*(1-p*.6));const s=u.size*scale*(1-p*.65);m.scale.set(s*.8,s*1.25,1);m.material.rotation=u.spin*p;m.material.opacity=Math.min(1,(1-p)*1.4);m.material.color.setRGB(1.6,1.1-p*.5,.8-p*.7);});
- f.sparks.forEach((m,i)=>{m.visible=on;if(!on)return;const u=m.userData,p=(time*.8+u.phase)%1;m.position.set(f.x+u.x*scale+u.drift*p,f.y+.2+p*2.6*scale,f.z+u.z*scale+Math.sin(time*3+i)*.1*p);m.scale.setScalar(.07*(1-p)+.02);m.material.opacity=(1-p);});
- f.core.visible=on;if(on){f.core.position.set(f.x,f.y+.35*scale,f.z);f.core.scale.setScalar((1.6+Math.sin(time*9)*.12)*scale);f.core.material.opacity=.55;}
- f.light.intensity=on?(5+Math.sin(time*13)*1.2+Math.sin(time*7.3))*scale:0;
-}
-export function makeSmokeSprite(dark=true,seed=0){const m=new T.Sprite(new T.SpriteMaterial({map:seed%2?particleTextures.smoke:particleTextures.smoke2,color:dark?'#3c4246':'#c9d0d4',transparent:true,depthWrite:false,opacity:.3}));m.userData.spin=(Math.random()-.5)*.6;return m;}
-export function makeSpraySprite(){return new T.Sprite(new T.SpriteMaterial({map:particleTextures.water,color:'#eefbff',transparent:true,depthWrite:false,opacity:.8}));}
-// Emissive glow used for lamps, beacons and emergency lights (picked up by bloom).
+// Brilho emissivo para lâmpadas e sinalização (capturado pelo bloom).
 export function glowSprite(color,size){const m=new T.Sprite(new T.SpriteMaterial({map:particleTextures.glow,color,transparent:true,depthWrite:false,blending:T.AdditiveBlending}));m.scale.setScalar(size);return m;}
+// Gotas de suor que escorrem da cabeça e do tronco de quem está cansado pelo calor.
+export function makeSweat(parent,count=4){
+ const drops=[];for(let i=0;i<count;i++){const m=new T.Sprite(new T.SpriteMaterial({map:particleTextures.drop,color:'#d9f1ff',transparent:true,depthWrite:false,opacity:0}));m.scale.setScalar(.06);m.userData={phase:i/count,dx:(i%2?1:-1)*(.05+Math.random()*.05)};parent.add(m);drops.push(m);}
+ return {drops,update(time,level,top=1.75){drops.forEach((m,i)=>{const p=(time*(.45+level*.5)+m.userData.phase)%1;m.position.set(m.userData.dx,top-p*.55,.08);m.material.opacity=level>0?Math.min(1,level*1.4)*(1-p)*.9:0;m.scale.setScalar(.045+level*.03);});}};
+}
+// Chuva: riscos finos que caem inclinados pelo vento, em uma caixa que acompanha a câmera.
+export function createRain(scene,count=2600){
+ const pos=new Float32Array(count*6),seed=new Float32Array(count*3);
+ for(let i=0;i<count;i++){seed[i*3]=Math.random();seed[i*3+1]=Math.random();seed[i*3+2]=Math.random();}
+ const geo=new T.BufferGeometry();geo.setAttribute('position',new T.BufferAttribute(pos,3).setUsage(T.DynamicDrawUsage));
+ const mat=new T.LineBasicMaterial({color:'#cfe2f2',transparent:true,opacity:.0,depthWrite:false});
+ const lines=new T.LineSegments(geo,mat);lines.frustumCulled=false;lines.visible=false;scene.add(lines);
+ return {lines,geo,pos,seed,count,t:0};
+}
+export function updateRain(r,dt,intensity,wind,center){
+ r.lines.visible=intensity>.02;if(!r.lines.visible)return;
+ r.t+=dt;const n=Math.floor(r.count*Math.min(1,intensity)),W=38,D=34,H=22,fall=26;
+ r.geo.setDrawRange(0,n*2);r.lines.material.opacity=.15+.3*intensity;
+ const lean=wind*5.5;
+ for(let i=0;i<n;i++){
+  const sx=r.seed[i*3],sy=r.seed[i*3+1],sz=r.seed[i*3+2];
+  const y=H-((sy*H+r.t*(fall*(.85+sz*.3)))%H);
+  const x=center.x+(sx-.5)*W+lean*(H-y)/fall;
+  const z=center.z+(sz-.5)*D;
+  const o=i*6;r.pos[o]=x;r.pos[o+1]=y;r.pos[o+2]=z;r.pos[o+3]=x-lean*.045;r.pos[o+4]=y+.55;r.pos[o+5]=z;
+ }
+ r.geo.attributes.position.needsUpdate=true;
+}
+// Relâmpago: traço irregular do céu ao solo, visível por instantes.
+export function createBolt(scene){
+ const pts=[];for(let i=0;i<14;i++)pts.push(new T.Vector3());
+ const geo=new T.BufferGeometry().setFromPoints(pts);
+ const line=new T.Line(geo,new T.LineBasicMaterial({color:new T.Color(2.4,2.4,3),transparent:true,opacity:0,toneMapped:false,depthWrite:false}));line.frustumCulled=false;scene.add(line);
+ return {line,geo,t:0,on:0};
+}
+export function strikeBolt(b,x,z){
+ const p=b.geo.attributes.position;let cx=x,cz=z;
+ for(let i=0;i<14;i++){const k=i/13;const y=40*(1-k);cx+=(Math.random()-.5)*(i?2.6:0);cz+=(Math.random()-.5)*(i?1.6:0);p.setXYZ(i,cx,y,cz);}
+ p.needsUpdate=true;b.on=.28;
+}
+export function updateBolt(b,dt){
+ if(b.on>0){b.on-=dt;b.line.material.opacity=b.on>.16?1:b.on>.1?.15:b.on>.05?.85:.4*Math.max(0,b.on/.05);}else b.line.material.opacity=0;
+}

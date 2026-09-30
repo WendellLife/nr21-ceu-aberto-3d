@@ -2,10 +2,12 @@ import {canMove} from './rules.mjs';
 import {W} from './layout.mjs';
 // Fase de cada pessoa da equipe conforme o andamento do dia.
 // working: rotina · eager: ritmo total sem aclimatação · measure: medindo o IBUTG · weak: passando mal pelo calor
-// shade: recuperando-se na sombra · rest: pausa no abrigo · stubborn: quer terminar o serviço sob raios · evacuate: vai ao container
+// shade: recuperando-se na sombra · rest: pausa no abrigo · stubborn: quer terminar o serviço sob raios · gather: reunido à espera da ordem · evacuate: vai ao container
 export function workerPhase(role,s){
  const d=id=>s.completed.includes(id);
- if(d('interrompa'))return 'evacuate';
+ if(d('libere'))return role==='sick'?'shade':'working';
+ if(d('abrigoSeguro'))return 'evacuate';
+ if(d('interrompa'))return 'gather';
  if(role==='roller')return d('tempo')?'stubborn':'working';
  if(role==='tech')return d('ibutg')?'working':'measure';
  if(role==='sick'){if(!d('pausa'))return 'working';return d('socorro')?'shade':'weak';}

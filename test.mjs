@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import * as r from './dist/rules.mjs';
 import {workerPhase,findRoute,walkableGrid} from './dist/crew.mjs';
-import {staticObstacles,containerSlots,doorOutside,doorInside,playerStart,roster,structures} from './dist/layout.mjs';
+import {staticObstacles,containerSlots,gatherSlots,doorOutside,doorInside,playerStart,roster,structures} from './dist/layout.mjs';
 const IDS=['previsao','abrigo','agua','dds','epi','novato','pesado','alojamento','moradia','pocofossa','ibutg','pausa','sinais','socorro','tempo','interrompa','abrigoSeguro','contagem','libere','registro'];
 const correctOf=o=>o.choices.find(c=>c.correct).id;
 const pick=(s,c)=>{const n=r.answer(s,c);assert.equal(n.step,s.step+1,`Escolha ${c} deve avançar`);return n;};
@@ -82,7 +82,8 @@ assert.equal(workerPhase('tech',s0),'measure');assert.equal(workerPhase('tech',u
 assert.equal(workerPhase('sick',upTo('ibutg')),'working');assert.equal(workerPhase('sick',upTo('pausa')),'weak','Cleiton passa mal depois do pico de calor');
 assert.equal(workerPhase('sick',upTo('socorro')),'shade');
 assert.equal(workerPhase('roller',upTo('previsao')),'working');assert.equal(workerPhase('roller',upTo('tempo')),'stubborn','Airton quer terminar a passada');
-for(const role of ['roller','tech','sick','novice','driver','caretaker'])assert.equal(workerPhase(role,upTo('interrompa')),'evacuate',`${role} vai ao abrigo após a interrupção`);
+for(const role of ['roller','tech','sick','novice','driver','caretaker']){assert.equal(workerPhase(role,upTo('interrompa')),'gather',`${role} se reúne e espera a ordem`);assert.equal(workerPhase(role,upTo('abrigoSeguro')),'evacuate',`${role} vai ao container depois da decisão`);}
+assert.equal(workerPhase('sick',upTo('libere')),'shade');assert.equal(workerPhase('roller',upTo('libere')),'working','Equipe volta ao serviço depois de liberada');
 
 // 7. Planta: acessibilidade de todos os destinos e do abrigo seguro
 const grid=walkableGrid(staticObstacles);
@@ -91,6 +92,7 @@ const reachable=(from,target,radius)=>{const route=findRoute(from,target,staticO
 const posOf=o=>o.who?roster.find(w=>w.name===o.who):o;
 for(const o of r.objectives){const a=posOf(o);assert.ok(a,`${o.id}: âncora`);assert.ok(reachable(playerStart,a,o.r),`${o.id}: destino acessível (${a.x}, ${a.z})`);}
 for(const w of roster){const p=w.exit||w;assert.ok(r.canMove(p.x,p.z,staticObstacles),`${w.name}: posição inicial (ou de desembarque) livre`);assert.ok(findRoute(p,doorInside,staticObstacles,grid).length,`${w.name}: rota até o container`);}
+assert.equal(gatherSlots.length,r.team);for(const p of gatherSlots){assert.ok(r.canMove(p.x,p.z,staticObstacles),'Vaga de reunião livre');for(const w of roster)assert.ok(findRoute(w.exit||w,p,staticObstacles,grid).length,`${w.name}: rota até a reunião`);}
 assert.equal(roster.length,r.team);assert.equal(containerSlots.length,r.team);
 for(const p of containerSlots)assert.ok(r.canMove(p.x,p.z,staticObstacles),'Vaga dentro do container livre');
 assert.ok(r.canMove(doorOutside.x,doorOutside.z,staticObstacles)&&r.canMove(doorInside.x,doorInside.z,staticObstacles),'Porta do container passável');
