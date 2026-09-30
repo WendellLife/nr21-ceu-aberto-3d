@@ -50,7 +50,7 @@ export function buildScenery(scene,TX){
  box(2.6,.7,1.2,'#e8aa21',0,.95,0,rollerGroup,.2);box(1.2,.8,1,'#d99a16',.35,1.6,0,rollerGroup);
  for(const x of [-.6,1.1])for(const z of [-.62,.62])box(.06,1.0,.06,'#2b3033',x+.1,2.1,z*.85,rollerGroup);
  box(1.6,.07,1.3,'#2b3033',.4,2.62,0,rollerGroup);box(.6,.5,.4,'#3a3f44',-1.1,1.55,0,rollerGroup);
- const drums=[];for(const x of [-1.2,1.15]){const c=cyl(.72,.72,1.5,'#9da4a8',x,.75,0,rollerGroup,22);c.rotation.x=Math.PI/2;drums.push(c);box(.3,.7,1.6,'#e8aa21',x,1.0,0,rollerGroup);}
+ const drums=[];for(const x of [-1.2,1.15]){const c=cyl(.72,.72,1.5,'#9da4a8',x,.75,0,rollerGroup,22);c.rotation.x=Math.PI/2;drums.push(c);for(let k=0;k<8;k++){const a=k/8*Math.PI*2;const r=box(.1,1.45,.1,'#3a3f44',Math.cos(a)*.73,0,Math.sin(a)*.73,c);r.rotation.y=-a;}box(.3,.7,1.6,'#e8aa21',x,1.0,0,rollerGroup);}
  const seatSpot=new T.Object3D();seatSpot.position.set(.35,1.3,0);rollerGroup.add(seatSpot);
  sign('ROLO\nCOMPACTADOR',.9,.4,1.05,1.0,.61,'#23282c','#f5c948',rollerGroup);
  out.roller={group:rollerGroup,drums,seat:seatSpot};

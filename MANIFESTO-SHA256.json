@@ -23,7 +23,7 @@
   "characters.mjs": "833380275d19c469edc16a564bb7febaa70db5462ee2f8e709ff79955d21398f",
   "crew.mjs": "983182005b9ab5a33390584f14bb4a0434fca063a37c7e24147be00c76727df3",
   "favicon.svg": "fc758046648aee9f078ed037535cf70144e5899ee745cf68d53f1eb1d9a44da8",
-  "game.mjs": "16d67b4c7c80d4d6920bd2ba09fabd1a487018f7d488c330b5d74a579fdd58c4",
+  "game.mjs": "7565a60fb759d25320e2f186cbde536b1cbbfab38eadd81c33777f2bdea2871d",
   "graphics.mjs": "162d3adf71e946bc1f0d9255c65686b44b371e63d53daad87bd894f722b65ebc",
   "index.html": "9b56db87af3f12d754c97971586c6164b11c090032a6bc56a9a1ebb3be834e91",
   "layout.mjs": "f40e81c965c61420812cce63cdfeea8d6bd06b3556dd6695c3a74940f0b7f724",
@@ -31,7 +31,7 @@
   "models/worker-f.glb": "7a87e15a99ccbc5e5877be66e1e4ecae0a581adcafa0cce1a5569f49909e968e",
   "models/worker-m.glb": "b69cec7a5cc7dc7e1c1f19c324024d090ae06e1315441a7bce4bf236112addc1",
   "rules.mjs": "c6db4ffac6685ad027c772ca9a0f00362e58f633dde76b3ee09605d241fbd3c6",
-  "scenery.mjs": "1deb40ddb19ac9d564f5203795bb7efee0440f7ee2719fbe95cd2ae94722e50a",
+  "scenery.mjs": "29a1d4ac7176f951cb4ea1239ee0966a2d77e306a6f487082adfa5f987301309",
   "style.css": "d4f3c32bd8f39ff1c9406ff80f591b7213224a7fa0c6fdeccb12c58962f8aa03",
   "three.module.js": "da7f8aecb0b1e4a55e820cce5dc5a5a8eb13dc379758f215e8fb07937be7a6a3"
  }
