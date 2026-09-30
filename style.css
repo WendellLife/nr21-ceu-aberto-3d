@@ -56,3 +56,40 @@ h1,h2,h3,p,strong,small,span,b,dt,dd,li,kbd,button{color:inherit}
 .ext-card dt:nth-of-type(2){margin-top:0}
 .tools #quality{font-size:12px;padding:0 12px}
 @media(max-width:600px){.tools #quality{font-size:10px;padding:0 7px}}
+
+/* ===== NR 21: clima, calor, origem da norma ===== */
+.fire-icon{color:#ffb62e}
+.refs{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+.refs .chip{display:flex;flex-direction:column;gap:1px;font-size:10px;font-weight:800;letter-spacing:.6px;border:1px solid;border-radius:5px;padding:3px 7px;line-height:1.25;max-width:100%}
+.refs .chip small{font-size:9px;font-weight:700;letter-spacing:.4px;opacity:.9}
+.refs .chip.vigente{color:#8fe8b8;border-color:#4fbf8a77;background:#4fbf8a14}
+.refs .chip.proposta{color:#ffd17a;border-color:#e4a83d88;background:#e4a83d18}
+.refs .chip.pratica{color:#9fd4ff;border-color:#5aa6e588;background:#5aa6e514}
+.refs .chip.check small::after{content:" • conferir subitem"}
+.mission.compact .refs{display:none}
+#wx{position:fixed;top:104px;right:27px;width:214px;padding:11px 14px;display:grid;gap:7px;border-top:3px solid #ffb62e;transition:border-color .6s}
+#wx .wx-row{display:flex;justify-content:space-between;font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;letter-spacing:1px}
+#wx .wx-row #wx-air{color:#ffcf7a}
+#wx .ibutg{display:flex;align-items:baseline;gap:6px;font-size:11px;font-weight:800;letter-spacing:1.4px;color:#b6c9d2}
+#wx .ibutg b{font-family:'Barlow Condensed',sans-serif;font-size:32px;line-height:1;color:#fff;letter-spacing:0}
+#wx .ibutg small{font-size:13px;color:#b6c9d2}
+#wx .gauge{position:relative;height:8px;border-radius:5px;background:linear-gradient(90deg,#57c48f 0 36%,#f0c23f 36% 62%,#e5583c 62% 100%);overflow:visible}
+#wx .gauge i{position:absolute;top:-3px;width:4px;height:14px;background:#fff;border-radius:2px;box-shadow:0 0 6px #000a;transition:left .8s}
+#wx .gauge u{position:absolute;top:-2px;width:1px;height:12px;background:#0008}
+#wx .gauge-legend{font-size:10px;color:#a9bcc6;line-height:1.3}
+#wx-thunder{display:flex;align-items:baseline;gap:7px;border-top:1px solid #6a7f8b55;padding-top:7px;color:#d9ecff}
+#wx-thunder span{font-size:20px;color:#ffe066}
+#wx-thunder b{font-family:'Barlow Condensed',sans-serif;font-size:28px;line-height:1;color:#fff}
+#wx-thunder small{font-size:11px;color:#b9d0df}
+#wx-thunder[hidden]{display:none}
+#sun-glare{position:fixed;inset:0;pointer-events:none;z-index:2;background:radial-gradient(ellipse at 18% -8%,rgba(255,210,120,.42),rgba(255,190,90,.12) 40%,transparent 68%);opacity:0;mix-blend-mode:screen;transition:opacity .8s}
+#flash{position:fixed;inset:0;pointer-events:none;z-index:3;background:#eaf2ff;opacity:0}
+.location{top:78px}
+#assembly-status[hidden]{display:none}
+.dialog .rules-list{display:grid;gap:8px;padding:0;list-style:none}
+.dialog .rules-list li{display:grid;gap:2px;background:rgba(32,52,63,.55);border:1px solid #4f6674;border-left:3px solid #f4c546;border-radius:6px;padding:9px 12px;font-size:13px;line-height:1.4;color:#c3d3db}
+.dialog .rules-list b{color:#fff;font-size:14px}
+#storm-dim{position:fixed;inset:0;pointer-events:none;z-index:1;background:linear-gradient(180deg,#0b1826,#1b3148);opacity:0;mix-blend-mode:multiply}
+#assembly-status{top:320px}
+@media(max-width:1000px){#wx{top:70px;bottom:auto;right:10px;width:164px;padding:8px 10px;gap:5px}#wx .wx-row{font-size:19px}#wx .ibutg b{font-size:24px}#wx .gauge-legend{display:none}.location{display:none}#assembly-status{top:auto;bottom:123px}}
+@media(max-width:600px){#wx{top:72px;right:8px;width:146px}}

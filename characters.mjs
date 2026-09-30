@@ -71,6 +71,11 @@ export const POSES={
  pin:{RightArm:[0,30,-10],RightForeArm:[0,80,0],LeftArm:[0,-30,15],LeftForeArm:[0,-105,0],Spine1:[10,0,0],Head:[18,0,0]},
  aim:{RightArm:[0,55,-10],RightForeArm:[0,40,0],LeftArm:[0,-70,10],LeftForeArm:[0,-35,0],Spine1:[12,0,0],RightUpLeg:[-25,0,-4],LeftUpLeg:[-25,0,4],RightLeg:[40,0,0],LeftLeg:[40,0,0]},
  cones:{RightUpLeg:[-70,0,-8],LeftUpLeg:[-70,0,8],RightLeg:[100,0,0],LeftLeg:[100,0,0],Spine1:[30,0,0],RightArm:[0,70,-5],RightForeArm:[0,15,0],LeftArm:[0,-70,5],LeftForeArm:[0,-15,0]},
+ wipe:{RightArm:[0,50,-10],RightForeArm:[0,140,0],Head:[-6,0,0],Spine1:[6,0,0]},
+ drink:{RightArm:[0,35,-20],RightForeArm:[0,125,0],Head:[-14,0,0]},
+ slump:{RightUpLeg:[-85,0,-6],LeftUpLeg:[-85,0,6],RightLeg:[85,0,0],LeftLeg:[85,0,0],Spine1:[30,0,0],Head:[24,0,0],RightArm:[0,25,-5],RightForeArm:[0,70,0],LeftArm:[0,-25,5],LeftForeArm:[0,-70,0]},
+ drive:{RightUpLeg:[-85,0,-6],LeftUpLeg:[-85,0,6],RightLeg:[85,0,0],LeftLeg:[85,0,0],Spine1:[6,0,0],RightArm:[0,55,-5],RightForeArm:[0,20,0],LeftArm:[0,-55,5],LeftForeArm:[0,-20,0]},
+ shelter:{RightArm:[0,35,-10],RightForeArm:[0,100,0],LeftArm:[0,-35,10],LeftForeArm:[0,-100,0],Head:[10,0,0]},
  crouch:{RightUpLeg:[-60,0,-8],LeftUpLeg:[-60,0,8],RightLeg:[95,0,0],LeftLeg:[95,0,0],Spine1:[18,0,0]}
 };
 // The pose table was authored on the mannequin rig; Mixamo-standard rigs (the realistic bodies) use other bone axes.
@@ -125,7 +130,7 @@ export function createCharacter(base,opts={}){
    // Head turns toward a point of interest (world x/z), within a comfortable range.
    if(extra.lookAt&&bones.Head){const a=Math.atan2(extra.lookAt.x-group.position.x,extra.lookAt.z-group.position.z)-group.rotation.y;const rel=Math.atan2(Math.sin(a),Math.cos(a));const yaw=T.MathUtils.clamp(rel,-1.1,1.1)*.7;_e.set(0,yaw,0);_q.setFromEuler(_e);bones.Head.quaternion.multiply(_q);}
    // Seated poses drop the pelvis so the character sits at chair height.
-   const DROP={seated:-.5,victim:-.5,wheel:-.42,crouch:-.25,aim:-.12,cones:-.32};const drop=DROP[st.pose]||0;model.position.y+=((drop*st.poseW+(DROP[st.prevPose]||0)*(1-st.poseW))-model.position.y)*Math.min(1,dt*6);
+   const DROP={seated:-.5,victim:-.5,slump:-.5,drive:-.5,wheel:-.42,crouch:-.25,aim:-.12,cones:-.32};const drop=DROP[st.pose]||0;model.position.y+=((drop*st.poseW+(DROP[st.prevPose]||0)*(1-st.poseW))-model.position.y)*Math.min(1,dt*6);
    // Lean into turns and acceleration for a more natural gait.
    const targetLean=extra.turn?T.MathUtils.clamp(-extra.turn*.35,-.12,.12):0;st.lean+=(targetLean-st.lean)*Math.min(1,dt*6);model.rotation.z=st.lean;}
  };
