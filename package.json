@@ -1,0 +1,13 @@
+{
+  "name": "nr21-ceu-aberto-3d",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Jogo educativo NR 21 — Trabalhos a céu aberto em 3D",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node test.mjs",
+    "manifest": "node manifest.mjs"
+  },
+  "engines": {"node": ">=18"}
+}
